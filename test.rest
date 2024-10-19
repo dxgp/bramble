@@ -1,0 +1,25 @@
+### Signup Test
+POST http://localhost:8000/signup/
+Content-Type: application/json
+
+{
+    "user" : {
+        "username": "gunjan",
+        "email": "gunjan@email.com",
+        "password": "himmat123",
+        "first_name": "gunjan",
+        "last_name": "payal"
+    },
+    "bio" : "gunjan bio"
+}
+
+###
+
+### Login Test
+POST http://localhost:8000/login/
+Content-Type: application/json
+
+{
+    "username": "gunjan",
+    "password": "himmat123"
+}
