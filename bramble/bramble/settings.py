@@ -25,7 +25,9 @@ SECRET_KEY = 'django-insecure-58%vp9i0*b9wnn3z_nja6&iq%m%gctol6=aqta%9tj+la-tnbu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['0.0.0.0']
+
+TEST_RUNNER = 'bramble.test_runner.ColoredTextTestRunner'
 
 
 # Application definition

@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
+from django.db.models import Q
 
 # Create your views here.
 @api_view(['GET'])
@@ -28,7 +29,6 @@ def signup(request):
         if serializer.is_valid():
             serializer.save()
             user = AppUser.objects.get(user__username=request.data['user']['username'])
-            print(f"User = {user}\n")
             token = Token.objects.create(user=user.user)
             user.user.set_password(request.data['user']['password'])
             user.user.save()
@@ -46,6 +46,7 @@ def login(request):
         serializer = AppUserSerializer(app_user)
         return Response({"token": token.key, "user": serializer.data}, status=status.HTTP_200_OK)
     
+
 class FeedAPIView(APIView):
     def get(self, request):
         app_user = AppUser.objects.get(user=request.user)
@@ -64,7 +65,6 @@ class FeedAPIView(APIView):
     
 class PostAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
         app_user = AppUser.objects.get(user=request.user)
         text = request.data.get('text', '')
@@ -86,3 +86,61 @@ class PostAPIView(APIView):
         post = get_object_or_404(Post, id=post_id, user_id=app_user)
         post.delete()
         return Response({'message': 'Post deleted successfully.'}, status=status.HTTP_200_OK)
+
+    def patch(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        post.likes += 1
+        post.save()
+        return Response({
+            'message': 'Post liked successfully.',
+            'likes': post.likes
+        }, status=status.HTTP_200_OK)
+
+class FollowAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, user_id):
+        """Follow a user."""
+        follower = AppUser.objects.get(user=request.user)
+        followee = get_object_or_404(AppUser, id=user_id)
+
+        if Follows.objects.filter(follower=follower, followee=followee).exists():
+            return Response({'message': 'You are already following this user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        Follows.objects.create(follower=follower, followee=followee)
+        return Response({'message': f'You are now following {followee.user.username}'}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, user_id):
+        """Unfollow a user."""
+        follower = AppUser.objects.get(user=request.user)
+        followee = get_object_or_404(AppUser, id=user_id)
+
+        follow_relationship = Follows.objects.filter(follower=follower, followee=followee)
+
+        if not follow_relationship.exists():
+            return Response({'message': 'You are not following this user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        follow_relationship.delete()
+        return Response({'message': f'You have unfollowed {followee.user.username}'}, status=status.HTTP_200_OK)
+
+class UserSearchAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # Allow only authenticated users to search
+
+    def get(self, request):
+        # Get the search query parameter from the request
+        query = request.query_params.get('q', '')
+
+        if not query:
+            return Response({'message': 'Search query is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Search for users by username, email, or bio (which is in AppUser)
+        users = AppUser.objects.filter(
+            Q(user__username__icontains=query) | 
+            Q(user__email__icontains=query) | 
+            Q(bio__icontains=query)
+        )
+
+        # Serialize the results using the AppUserSerializer
+        serializer = AppUserSerializer(users, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+

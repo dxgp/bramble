@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Post, AppUser, User
+from .models import Post, AppUser, User,Follows
 
 class PostSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,13 +34,15 @@ class AppUserSerializer(serializers.ModelSerializer):
     """Serializer for the AppUser model, allowing creation of both User and AppUser."""
     
     user = UserSerializer()  # Allow writable nested user creation
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+    post_count = serializers.SerializerMethodField()
 
     class Meta:
         model = AppUser
-        fields = ['user', 'bio']  # Include fields from AppUser
+        fields = ['user', 'bio', 'followers_count', 'following_count', 'post_count']
 
     def create(self, validated_data):
-        """Override the create method to create both User and AppUser."""
         user_data = validated_data.pop('user')  # Extract User data from the request
         user = UserSerializer.create(UserSerializer(), validated_data=user_data)  # Create the User instance
         
@@ -48,4 +50,12 @@ class AppUserSerializer(serializers.ModelSerializer):
         app_user = AppUser.objects.create(user=user, bio=validated_data.get('bio', ''))
         
         return app_user
+    def get_followers_count(self, obj):
+        return Follows.objects.filter(followee=obj).count()
+
+    def get_following_count(self, obj):
+        return Follows.objects.filter(follower=obj).count()
+
+    def get_post_count(self, obj):
+        return Post.objects.filter(user_id=obj).count()
 
