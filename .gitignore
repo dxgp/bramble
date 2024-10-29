@@ -1,4 +1,5 @@
 # Ignore OS generated files
+venv/
 .DS_Store
 Thumbs.db
 bramble/bramble/__pycache__/

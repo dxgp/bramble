@@ -25,7 +25,13 @@ SECRET_KEY = 'django-insecure-58%vp9i0*b9wnn3z_nja6&iq%m%gctol6=aqta%9tj+la-tnbu
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['0.0.0.0']
+ALLOWED_HOSTS = ['127.0.0.1', '192.168.1.33']
+
+CORS_ALLOWED_ORIGINS = [
+    # 'http://127.0.0.1:8000',  # Localhost for browser testing
+    'http://192.168.1.33:8000',  # Replace with your computer’s local IP
+]
+
 
 TEST_RUNNER = 'bramble.test_runner.ColoredTextTestRunner'
 
@@ -39,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
 
     # external
     'rest_framework',
@@ -56,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'bramble.urls'
